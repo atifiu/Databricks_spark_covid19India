@@ -1,13 +1,4 @@
 # Databricks notebook source
-# MAGIC %md
-# MAGIC This notebook uses data world covid 19 data which is fetch from https://www.mygov.in/covid-19 website
-# MAGIC This is daily aggregate data statewise updated daily around 12 noon.
-# MAGIC 
-# MAGIC ###### Version 1: Published on 26th August 2022 and commit to Git contains running code which is used to generate dashboard.
-# MAGIC ###### Version 2: Fixed issue of duplicate records in queries generating the charts/graphs by including last_updated field to fetch only last day records. Added new columns Discharge/Death ratio
-
-# COMMAND ----------
-
 # Reading the data directly from data.world url as a workaround because spark dataframe is unable to read data directly 
 # from url and hence pandas is used to convert csv to pandas df.
 import pandas as pd
@@ -17,11 +8,6 @@ df.head()
 
 # COMMAND ----------
 
-def column_redef(df):
-    for col in df.columns:
-        df.rename(columns = {col:col.replace(' ','_').strip().upper()}, inplace = True)
-column_redef(df)
-print(df.columns)
 
 
 # COMMAND ----------
@@ -80,19 +66,17 @@ df.columns
 # along with aggregate data.
 from pyspark.sql.functions import round
 
-df = df.select(df["STATE_NAME"], 
-               df["POSITIVE_CASES_(TODAY)"].alias("TOTAL_CASES"), 
-               df["ACTIVE_CASES_(TODAY)"].alias("TOTAL_ACTIVE_CASES"),
-               df["CURED_CASES_(TODAY)"].alias("TOTAL_RECOVERIES"), 
-               df["DEATH_CASES_(TODAY)"].alias("TOTAL_DEATHS"),
-               (df["POSITIVE_CASES_(TODAY)"] - df["POSITIVE_CASES_(YESTERDAY)"]).alias("NEW_CASES"),
-               (df["ACTIVE_CASES_(TODAY)"] - df["ACTIVE_CASES_(YESTERDAY)"]).alias("NEW_ACTIVE_CASES"),
-               (df["CURED_CASES_(TODAY)"] - df["CURED_CASES_(YESTERDAY)"]).alias("NEW_RECOVERIES"), 
-               (df["DEATH_CASES_(TODAY)"] - df["DEATH_CASES_(YESTERDAY)"]).alias("NEW_DEATHS"), 
-               round(((df["ACTIVE_CASES_(TODAY)"]/df["POSITIVE_CASES_(TODAY)"])*100), 2).alias("ACTIVE_RATIO"),
-               round(((df["CURED_CASES_(TODAY)"]/df["POSITIVE_CASES_(TODAY)"])*100), 2).alias("DISCHARGE_RATIO"),
-               round(((df["DEATH_CASES_(TODAY)"]/df["POSITIVE_CASES_(TODAY)"])*100), 2).alias("DEATH_RATIO"),
-               df["LAST_UPDATED_(IST)"]. alias("LAST_UPDATED_IST"))
+df = df.select(df["State Name"].alias("State_Name"), 
+               df["Positive Cases (Today)"].alias("Total_Cases"), 
+               df["Active Cases (Today)"].alias("Total_Active_Cases"),
+               df["Cured Cases (Today)"].alias("Total_Recoveries"), 
+               df["Death Cases (Today)"].alias("Total_Deaths"),
+               (df["Positive Cases (Today)"] - df["Positive Cases (Yesterday)"]).alias("New_Cases"),
+               (df["Active Cases (Today)"] - df["Active Cases (Yesterday)"]).alias("New_Active_Cases"),
+               (df["Cured Cases (Today)"] - df["Cured Cases (Yesterday)"]).alias("New_Recoveries"), 
+               (df["Death Cases (Today)"] - df["Death Cases (Yesterday)"]).alias("New_Deaths"), 
+               (round((df["Active Cases (Today)"]/df["Positive Cases (Today)"])*100)).alias("Active_ratio"),
+               df["Last Updated (IST)"].alias("Last_Updated_IST") )
 
 # COMMAND ----------
 
@@ -155,8 +139,7 @@ display(df)
 # MAGIC %sql
 # MAGIC --# Pie chart showing top 10 states in terms Total Cases State-wise
 # MAGIC select state_name as `States`, Total_Cases, Total_Active_Cases, Total_Recoveries, Total_Deaths, New_Cases, New_Active_Cases, New_Deaths
-# MAGIC from covid19_india_aggregate where Last_Updated_IST = (select max(Last_Updated_IST) from covid19_india_aggregate)
-# MAGIC order by Total_Cases desc limit 10;
+# MAGIC from covid19_india_aggregate order by Total_Cases desc limit 10;
 
 # COMMAND ----------
 
@@ -164,8 +147,7 @@ display(df)
 # MAGIC %sql
 # MAGIC --Pie chart showing top 10 states in terms Total Deaths State-wise
 # MAGIC select State_name as `States`, Total_Cases, Total_Active_Cases, Total_Recoveries, Total_Deaths, New_Cases, New_Active_Cases, New_Deaths
-# MAGIC from covid19_india_aggregate where Last_Updated_IST = (select max(Last_Updated_IST) from covid19_india_aggregate)
-# MAGIC order by Total_Deaths desc limit 10;
+# MAGIC from covid19_india_aggregate order by Total_Deaths desc limit 10;
 
 # COMMAND ----------
 
@@ -173,8 +155,7 @@ display(df)
 # MAGIC %sql
 # MAGIC --# Bar chart showing top 10 states in terms pf Total Cases vs Total Recoveries
 # MAGIC select state_name as `States`, Total_Cases, Total_Active_Cases, Total_Recoveries, Total_Deaths, New_Cases, New_Active_Cases, New_Deaths
-# MAGIC from covid19_india_aggregate where Last_Updated_IST = (select max(Last_Updated_IST) from covid19_india_aggregate)
-# MAGIC order by Total_Cases desc limit 10;
+# MAGIC from covid19_india_aggregate order by Total_Cases desc limit 10;
 
 # COMMAND ----------
 
@@ -182,8 +163,7 @@ display(df)
 # MAGIC %sql
 # MAGIC --# Pie chart showing top 10 states in terms of Total Active Cases State-wise
 # MAGIC select state_name as `States`, Total_Cases, Total_Active_Cases, Total_Recoveries, Total_Deaths, New_Cases, New_Active_Cases, New_Deaths
-# MAGIC from covid19_india_aggregate where Last_Updated_IST = (select max(Last_Updated_IST) from covid19_india_aggregate)
-# MAGIC order by Total_Active_Cases desc limit 10;
+# MAGIC from covid19_india_aggregate order by Total_Active_Cases desc limit 10;
 
 # COMMAND ----------
 
@@ -191,5 +171,4 @@ display(df)
 # MAGIC %sql
 # MAGIC --# Bar chart showing top 10 states in terms of New Active cases vs New Active Cases
 # MAGIC select state_name as `States`, Total_Cases, Total_Active_Cases, Total_Recoveries, Total_Deaths, New_Cases, New_Active_Cases, New_Deaths
-# MAGIC from covid19_india_aggregate where Last_Updated_IST = (select max(Last_Updated_IST) from covid19_india_aggregate)
-# MAGIC order by New_Cases desc limit 10;
+# MAGIC from covid19_india_aggregate order by New_Cases desc limit 10;
